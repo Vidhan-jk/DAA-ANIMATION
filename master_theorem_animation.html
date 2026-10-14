@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Master Theorem — Interactive Animation</title>
+<style>
+:root{--bg:#0b1220;--panel:#121e33;--ink:#eef4ff;--muted:#a8bad7;--blue:#78aaff;--orange:#ffbd69;--green:#7ce0b0}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#0b1220,#142b49);color:var(--ink);font:16px/1.5 system-ui,Arial,sans-serif}
+main{max-width:1050px;margin:28px auto;padding:20px}.card{background:#121e33eF;border:1px solid #31496c;border-radius:18px;padding:22px;margin:16px 0;box-shadow:0 12px 35px #0003}
+h1{margin:.2em 0;color:#9cc4ff}h2{margin-top:0}.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+label{display:block;color:var(--muted);font-size:.95rem}input{width:100%;accent-color:var(--blue)}.value{color:var(--orange);font-weight:700}
+.formula{font-size:clamp(1.15rem,3vw,1.8rem);text-align:center;padding:16px;background:#09101c;border-radius:12px;overflow-wrap:anywhere}
+button{background:var(--blue);color:#071226;border:0;border-radius:9px;padding:10px 16px;font-weight:700;cursor:pointer;margin:4px}
+.stage{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;min-height:120px}
+.node{border:2px solid var(--blue);background:#1a3151;border-radius:10px;padding:12px;text-align:center;min-width:105px;animation:pop .45s ease}
+.arrow{font-size:1.7rem;color:var(--orange)}@keyframes pop{from{transform:scale(.75);opacity:.3}to{transform:scale(1);opacity:1}}
+.badge{display:inline-block;padding:5px 10px;border-radius:20px;background:#243d60;color:#cfe0ff;font-weight:700}
+small,.muted{color:var(--muted)}.result{font-size:1.12rem;color:var(--green);font-weight:700}
+@media(max-width:650px){.controls{grid-template-columns:1fr}main{padding:12px}}
+</style></head>
+<body><main>
+<h1>Master Theorem: Step-by-Step Explorer</h1>
+<p class="muted">Vidhan Jyoti Kahar · SAP ID 590022295 · Batch B17 · Design and Analysis of Algorithms</p>
+<div class="card"><h2>1. Change the recurrence</h2>
+<p>Explore <strong>T(n) = aT(n/b) + Θ(n<sup>d</sup>)</strong>. Move a slider and watch the critical term and case update.</p>
+<div class="controls">
+<label>Number of subproblems, a = <span class="value" id="av">2</span><input id="a" type="range" min="1" max="8" value="2"></label>
+<label>Division factor, b = <span class="value" id="bv">2</span><input id="b" type="range" min="2" max="8" value="2"></label>
+<label>External-work exponent, d = <span class="value" id="dv">1</span><input id="d" type="range" min="0" max="4" step=".25" value="1"></label>
+</div></div>
+<div class="card"><h2>2. Mathematical comparison</h2>
+<div class="formula" id="rec">T(n) = 2T(n/2) + Θ(n<sup>1</sup>)</div>
+<p>Critical exponent: <strong>p = log<sub>b</sub>a = <span id="p"></span></strong></p>
+<p>Critical term: <strong>n<sup id="pexp"></sup></strong> &nbsp; compared with external work <strong>n<sup id="dexp"></sup></strong></p>
+<div class="result" id="result"></div><p id="reason" class="muted"></p></div>
+<div class="card"><h2>3. Animated recursion idea</h2>
+<div class="stage" id="stage"></div><div style="text-align:center"><button id="prev">← Previous step</button><span class="badge" id="step">Step 1 of 4</span><button id="next">Next step →</button><button id="play">▶ Play</button></div>
+<p id="caption" style="text-align:center"></p><small>Conceptual illustration only: node boxes represent recursive calls; this is not a runtime benchmark.</small></div>
+<div class="card"><h2>How to use</h2><ol><li>Adjust a and b to change the recursive branching.</li><li>Adjust d to change the polynomial work outside recursion.</li><li>Compare d with p = log<sub>b</sub>a to identify the likely case.</li><li>For Case 3, always check the regularity condition before using the result.</li></ol>
+<p><strong>Assumption:</strong> this demo uses f(n) = Θ(n<sup>d</sup>) with d ≥ 0. The simplified classifier illustrates the common cases; it does not cover every recurrence.</p></div>
+</main>
+<script>
+const $=id=>document.getElementById(id);let frame=0,timer=null;
+const captions=[
+"Step 1 — Start with one problem of size n.",
+"Step 2 — Each problem creates a subproblems of size n/b.",
+"Step 3 — The levels add up; compare their work with f(n).",
+"Step 4 — The dominant growth rate determines the asymptotic bound."
+];
+function update(){
+ const a=+$('a').value,b=+$('b').value,d=+$('d').value,p=Math.log(a)/Math.log(b);
+ $('av').textContent=a;$('bv').textContent=b;$('dv').textContent=d;
+ $('rec').innerHTML=`T(n) = ${a}T(n/${b}) + Θ(n<sup>${d}</sup>)`;
+ $('p').textContent=p.toFixed(3);$('pexp').textContent=p.toFixed(3);$('dexp').textContent=d;
+ let label,ans,reason;
+ if(d<p-1e-7){label='Case 1 — recursive term dominates';ans=`T(n) = Θ(n<sup>${p.toFixed(3)}</sup>)`;reason='The external work grows polynomially slower than the critical term.'}
+ else if(Math.abs(d-p)<=1e-7){label='Case 2 — balanced growth';ans=`T(n) = Θ(n<sup>${p.toFixed(3)}</sup> log n)`;reason='The external work matches the critical term, adding a logarithmic factor.'}
+ else{label='Case 3 candidate — external work dominates';ans=`T(n) = Θ(n<sup>${d}</sup>) if regularity holds`;reason='The external work grows polynomially faster. Verify a·f(n/b) ≤ c·f(n), for some c < 1.'}
+ $('result').textContent=label;$('reason').textContent=reason;$('result').dataset.ans=ans;
+ render();
+}
+function render(){
+ $('step').textContent=`Step ${frame+1} of 4`;$('caption').textContent=captions[frame];
+ const a=+$('a').value,b=+$('b').value;
+ let nodes= frame===0?['T(n)']:frame===1?['T(n)','T(n/'+b+') × '+a]:frame===2?['Level 0: 1 node','Level 1: '+a+' nodes','Level 2: '+(a*a)+' nodes']:['Compare f(n)','with n^log_b(a)','Choose case'];
+ $('stage').innerHTML=nodes.map((n,i)=>(i?'<span class="arrow">→</span>':'')+`<div class="node">${n}</div>`).join('');
+}
+function move(n){frame=(frame+n+4)%4;render()}
+$('a').addEventListener('input',update);$('b').addEventListener('input',update);$('d').addEventListener('input',update);
+$('prev').onclick=()=>move(-1);$('next').onclick=()=>move(1);
+$('play').onclick=()=>{if(timer){clearInterval(timer);timer=null;$('play').textContent='▶ Play'}else{$('play').textContent='Ⅱ Pause';timer=setInterval(()=>move(1),1800)}};
+update();
+</script></body></html>
